@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flowbite Social Newsfeed</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            200: '#bfdbfe',
+                            300: '#93c5fd',
+                            400: '#60a5fa',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 5px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #475569;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-200 min-h-screen">
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed bottom-5 right-5 z-50 flex items-center w-full max-w-xs p-4 text-gray-500 bg-white rounded-lg shadow dark:text-gray-400 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 hidden transform transition-all duration-300">
+        <div class="inline-flex items-center justify-center flex-shrink-0 w-8 h-8 text-green-500 bg-green-100 rounded-lg dark:bg-green-800 dark:text-green-200">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
+        </div>
+        <div class="ml-3 text-sm font-normal" id="toast-message">Action completed successfully.</div>
+    </div>
+
+    <!-- Navigation Header -->
+    <header class="sticky top-0 z-30 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- Brand / Logo -->
+                <div class="flex items-center space-x-3">
+                    <div class="p-2 bg-primary-600 rounded-lg text-white">
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M2 5a2 2 0 012-2h12a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V5zm3.293 1.293a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 01-1.414-1.414L7.586 10 5.293 7.707a1 1 0 010-1.414zM11 12a1 1 0 100 2h3a1 1 0 100-2h-3z"></path></svg>
+                    </div>
+                    <span class="text-xl font-bold tracking-tight text-gray-900 dark:text-white">FlowFeed</span>
+                </div>
+
+                <!-- Search Input -->
+                <div class="hidden md:flex items-center flex-1 max-w-md mx-8">
+                    <div class="relative w-full">
+                        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                            <svg class="w-4 h-4 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        </div>
+                        <input type="text" id="feed-search" oninput="handleSearch(this.value)" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full pl-10 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white" placeholder="Search posts, hashtags, or users...">
+                    </div>
+                </div>
+
+                <!-- Dark Mode Toggle & Current User -->
+                <div class="flex items-center space-x-3">
+                    <button onclick="toggleDarkMode()" class="p-2 text-gray-500 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none dark:text-gray-400">
+                        <svg id="theme-toggle-dark-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
+                        <svg id="theme-toggle-light-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"/></svg>
+                    </button>
+                    <div class="flex items-center space-x-2 pl-2 border-l border-gray-200 dark:border-gray-700">
+                        <img class="w-9 h-9 rounded-full ring-2 ring-primary-500" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150" alt="Admin Avatar" onerror="this.src='https://placehold.co/100x100/3b82f6/white?text=Admin'">
+                        <div class="hidden sm:block text-left text-xs">
+                            <div class="font-semibold text-gray-900 dark:text-white">Alex Rivera</div>
+                            <div class="text-gray-500 dark:text-gray-400">System Admin</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container Layout -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+
+            <!-- Left Sidebar Navigation / Filters -->
+            <aside class="lg:col-span-1 space-y-4">
+                <div class="p-4 bg-white border border-gray-200 rounded-xl shadow-sm dark:bg-gray-800 dark:border-gray-700">
+                    <h2 class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-400 mb-3">Feed Views</h2>
+                    <nav class="space-y-1">
+                        <button onclick="setFilter('all')" id="filter-all" class="filter-btn w-full flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-primary-600 bg-primary-50 dark:bg-primary-900/30 dark:text-primary-400">
+                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                            All Posts
+                            <span id="count-all" class="ml-auto text-xs font-semibold px-2 py-0.5 rounded-full bg-primary-100 dark:bg-primary-900 text-primary-600 dark:text-primary-300">0</span>
+                        </button>
+                        <button onclick="setFilter('mine')" id="filter-mine" class="filter-btn w-full flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                            <svg class="w-5 h-5 mr-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                            My Posts
+                            <span id="count-mine" class="ml-auto text-xs font-semibold px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">0</span>
+                        </button>
+                        <button onclick="setFilter('popular')" id="filter-popular" class="filter-btn w-full flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                            <svg class="w-5 h-5 mr-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                            Popular
+                        </button>
+                        <button onclick="setFilter('announcements')" id="filter-announcements" class="filter-btn w-full flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                            <svg class="w-5 h-5 mr-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 58a1 1 0 011-1h2a1 1 0 011 1v2h3a1 1 0 011 1v2a1 1 0 01-1 1h-3v7a1 1 0 01-1 1h-2a1 1 0 01-1-1v-7H6a1 1 0 01-1-1V9a1 1 0 011-1h3V6z"></path></svg>
+                            Announcements
+                        </button>
+                    </nav>
+                </div>
+
+                <!-- Activity Summary Card -->
+                <div class="p-4 bg-gradient-to-br from-primary-600 to-primary-800 text-white rounded-xl shadow-sm">
+                    <h3 class="text-sm font-bold mb-1">Community Activity</h3>
+                    <p class="text-xs text-primary-100 mb-3">Join discussions, share updates, and collaborate with your web app team.</p>
+                    <div class="flex items-center justify-between text-xs pt-2 border-t border-primary-500/40">
+                        <span>Active Members</span>
+                        <span class="font-bold bg-primary-900/50 px-2 py-0.5 rounded">142 online</span>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Center Feed Column -->
+            <main class="lg:col-span-2 space-y-6">
+
+                <!-- Post Creation Card / Publisher -->
+                <div class="bg-white border border-gray-200 rounded-xl shadow-sm dark:bg-gray-800 dark:border-gray-700 p-4">
+                    <div class="flex items-start space-x-3 mb-3">
+                        <img class="w-10 h-10 rounded-full" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150" alt="Alex Rivera" onerror="this.src='https://placehold.co/100x100/3b82f6/white?text=AR'">
+                        <div class="flex-1">
+                            <textarea id="post-input" rows="3" class="w-full text-sm text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 border border-gray-200 dark:border-gray-600 focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all placeholder-gray-400" placeholder="What's on your mind? Share updates with the team..."></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Attached Image Preview Container -->
+                    <div id="image-preview-container" class="hidden relative mb-3 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+                        <img id="image-preview" src="" class="w-full max-h-56 object-cover" alt="Attached preview">
+                        <button onclick="removeAttachedImage()" class="absolute top-2 right-2 p-1.5 bg-gray-900/70 text-white rounded-full hover:bg-gray-900 transition-colors">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        </button>
+                    </div>
+
+                    <!-- Image URL input field (toggleable) -->
+                    <div id="image-url-input-box" class="hidden mb-3">
+                        <div class="flex space-x-2">
+                            <input type="url" id="image-url-input" class="flex-1 text-xs bg-gray-50 border border-gray-300 text-gray-900 rounded-lg p-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="Paste image URL here (e.g. https://images.unsplash.com/...)">
+                            <button onclick="attachImageFromUrl()" class="px-3 py-1.5 bg-gray-200 dark:bg-gray-600 text-xs font-medium rounded-lg hover:bg-gray-300 transition-colors">Attach</button>
+                        </div>
+                    </div>
+
+                    <!-- Publisher Toolbar & Actions -->
+                    <div class="flex flex-wrap items-center justify-between pt-3 border-t border-gray-100 dark:border-gray-700 gap-2">
+                        <div class="flex items-center space-x-1 sm:space-x-2">
+                            <!-- Photo Attachment Trigger -->
+                            <button type="button" onclick="toggleImageUrlBox()" class="inline-flex items-center p-2 text-xs font-medium text-gray-500 rounded-lg hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 transition-colors">
+                                <svg class="w-5 h-5 text-green-500 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                Image
+                            </button>
+
+                            <!-- Tag/Mention Button -->
+                            <button type="button" onclick="insertTag('#update')" class="inline-flex items-center p-2 text-xs font-medium text-gray-500 rounded-lg hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 transition-colors">
+                                <svg class="w-5 h-5 text-blue-500 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"></path></svg>
+                                Tag
+                            </button>
+
+                            <!-- Sentiment Emoji Button -->
+                            <button type="button" onclick="insertEmoji('🚀')" class="inline-flex items-center p-2 text-xs font-medium text-gray-500 rounded-lg hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 transition-colors">
+                                <span class="text-base mr-1.5">🚀</span>
+                                Launch
+                            </button>
+                        </div>
+
+                        <div class="flex items-center space-x-2 ml-auto">
+                            <!-- Visibility Selector -->
+                            <select id="post-visibility" class="text-xs bg-gray-50 border border-gray-300 text-gray-700 rounded-lg p-2 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300">
+                                <option value="Public">🌐 Public</option>
+                                <option value="Team">👥 Team Only</option>
+                                <option value="Announcements">📢 Announcement</option>
+                            </select>
+
+                            <!-- Submit Button -->
+                            <button type="button" onclick="publishPost()" class="px-4 py-2 text-xs font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 focus:ring-4 focus:ring-primary-300 transition-colors shadow-sm">
+                                Publish Post
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Feed Posts Container -->
+                <div id="feed-container" class="space-y-4">
+                    <!-- Dynamic Posts render here -->
+                </div>
+
+            </main>
+
+            <!-- Right Sidebar - Widgets & Trends -->
+            <aside class="lg:col-span-1 space-y-4">
+                
+                <!-- Trending Topics Widget -->
+                <div class="p-4 bg-white border border-gray-200 rounded-xl shadow-sm dark:bg-gray-800 dark:border-gray-700">
+                    <h3 class="text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center">
+                        <svg class="w-4 h-4 mr-2 text-primary-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M12.395 2.553a1 1 0 00-1.45-1.348l-7.24 6.136a1 1 0 00-.312.871A12.012 12.012 0 005.158 15.3l-1.348 2.023a1 1 0 001.348 1.45l2.023-1.348a12.012 12.012 0 007.088 1.765 1 1 0 00.871-.312l6.136-7.24a1 1 0 00-1.348-1.45l-5.32 4.498a10.011 10.011 0 01-4.08-4.08l4.498-5.32z" clip-rule="evenodd"></path></svg>
+                        Trending Discussions
+                    </h3>
+                    <div class="space-y-3">
+                        <a href="#" onclick="filterByHashtag('UIUX'); return false;" class="block group">
+                            <div class="text-xs font-semibold text-gray-800 dark:text-gray-200 group-hover:text-primary-600 transition-colors">#UIUX</div>
+                            <div class="text-[11px] text-gray-500">42 posts today • Active design reviews</div>
+                        </a>
+                        <a href="#" onclick="filterByHashtag('Release2026'); return false;" class="block group">
+                            <div class="text-xs font-semibold text-gray-800 dark:text-gray-200 group-hover:text-primary-600 transition-colors">#Release2026</div>
+                            <div class="text-[11px] text-gray-500">18 posts • Product engineering update</div>
+                        </a>
+                        <a href="#" onclick="filterByHashtag('Performance'); return false;" class="block group">
+                            <div class="text-xs font-semibold text-gray-800 dark:text-gray-200 group-hover:text-primary-600 transition-colors">#Performance</div>
+                            <div class="text-[11px] text-gray-500">12 posts • Database optimization notes</div>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Suggested Team Connections Widget -->
+                <div class="p-4 bg-white border border-gray-200 rounded-xl shadow-sm dark:bg-gray-800 dark:border-gray-700">
+                    <h3 class="text-sm font-bold text-gray-900 dark:text-white mb-3">Team Members</h3>
+                    <div class="space-y-3">
+                        <!-- Member 1 -->
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-2">
+                                <img class="w-8 h-8 rounded-full" src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=150" alt="Sarah Chen" onerror="this.src='https://placehold.co/80x80/ec4899/white?text=SC'">
+                                <div>
+                                    <div class="text-xs font-semibold text-gray-900 dark:text-white">Sarah Chen</div>
+                                    <div class="text-[10px] text-gray-500">Lead Designer</div>
+                                </div>
+                            </div>
+                            <button onclick="toggleFollow(this)" class="px-2.5 py-1 text-[11px] font-medium text-primary-600 border border-primary-600 dark:text-primary-400 dark:border-primary-400 rounded-md hover:bg-primary-50 dark:hover:bg-primary-900/40 transition-colors">Follow</button>
+                        </div>
+                        <!-- Member 2 -->
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-2">
+                                <img class="w-8 h-8 rounded-full" src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=150" alt="Marcus Vance" onerror="this.src='https://placehold.co/80x80/10b981/white?text=MV'">
+                                <div>
+                                    <div class="text-xs font-semibold text-gray-900 dark:text-white">Marcus Vance</div>
+                                    <div class="text-[10px] text-gray-500">DevOps Engineer</div>
+                                </div>
+                            </div>
+                            <button onclick="toggleFollow(this)" class="px-2.5 py-1 text-[11px] font-medium text-primary-600 border border-primary-600 dark:text-primary-400 dark:border-primary-400 rounded-md hover:bg-primary-50 dark:hover:bg-primary-900/40 transition-colors">Follow</button>
+                        </div>
+                    </div>
+                </div>
+
+            </aside>
+
+        </div>
+    </div>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // State Management
+        let postsData = [
+            {
+                id: 1,
+                author: "Sarah Chen",
+                role: "Lead UI Designer",
+                avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=150",
+                timestamp: "2 hours ago",
+                content: "Just finalized the new Flowbite Design Tokens for our upcoming Q4 release! 🎨 Check out the dark mode preview below and let me know your thoughts in the comments. #UIUX #DesignSystem",
+                image: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=800",
+                likes: 24,
+                isLiked: false,
+                isMine: false,
+                category: "Public",
+                comments: [
+                    {
+                        id: 101,
+                        author: "Marcus Vance",
+                        avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=150",
+                        time: "1 hour ago",
+                        text: "The contrast ratios look super sharp! Great work team!"
+                    }
+                ]
+            },
+            {
+                id: 2,
+                author: "Alex Rivera",
+                role: "System Admin (You)",
+                avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150",
+                timestamp: "5 hours ago",
+                content: "📢 Scheduled Maintenance Notice: We will be upgrading our primary database cluster tonight at 02:00 UTC. Expected downtime is under 10 minutes. #Performance #Announcements",
+                image: null,
+                likes: 15,
+                isLiked: true,
+                isMine: true,
+                category: "Announcements",
+                comments: []
+            },
+            {
+                id: 3,
+                author: "Marcus Vance",
+                role: "DevOps Engineer",
+                avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=150",
+                timestamp: "Yesterday",
+                content: "Successfully reduced our server response latencies by 35% using edge caching mechanisms! 🚀 Performance dashboards looking very healthy today.",
+                image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=800",
+                likes: 42,
+                isLiked: false,
+                isMine: false,
+                category: "Team",
+                comments: [
+                    {
+                        id: 102,
+                        author: "Sarah Chen",
+                        avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=150",
+                        time: "18 hours ago",
+                        text: "Noticed the app loading significantly faster today! Amazing boost!"
+                    }
+                ]
+            }
+        ];
+
+        let currentFilter = 'all';
+        let searchQuery = '';
+        let attachedImageUrl = null;
+
+        // Initialize state and renders on load
+        window.onload = function() {
+            initDarkMode();
+            renderFeed();
+            updateCounts();
+        };
+
+        // Dark Mode Setup
+        function initDarkMode() {
+            const isDarkMode = localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
+            if (isDarkMode) {
+                document.documentElement.classList.add('dark');
+                updateThemeIcons(true);
+            } else {
+                document.documentElement.classList.remove('dark');
+                updateThemeIcons(false);
+            }
+        }
+
+        function toggleDarkMode() {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.setItem('color-theme', isDark ? 'dark' : 'light');
+            updateThemeIcons(isDark);
+        }
+
+        function updateThemeIcons(isDark) {
+            document.getElementById('theme-toggle-dark-icon').classList.toggle('hidden', isDark);
+            document.getElementById('theme-toggle-light-icon').classList.toggle('hidden', !isDark);
+        }
+
+        // Render Feed Posts dynamically
+        function renderFeed() {
+            const feedContainer = document.getElementById('feed-container');
+            feedContainer.innerHTML = '';
+
+            let filteredPosts = postsData.filter(post => {
+                // Apply Category Filter
+                if (currentFilter === 'mine' && !post.isMine) return false;
+                if (currentFilter === 'announcements' && post.category !== 'Announcements') return false;
+                if (currentFilter === 'popular' && post.likes < 20) return false;
+
+                // Apply Search Filter
+                if (searchQuery.trim() !== '') {
+                    const q = searchQuery.toLowerCase();
+                    return post.content.toLowerCase().includes(q) || post.author.toLowerCase().includes(q);
+                }
+                return true;
+            });
+
+            if (filteredPosts.length === 0) {
+                feedContainer.innerHTML = `
+                    <div class="p-8 text-center bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
+                        <svg class="w-12 h-12 mx-auto text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                        <p class="text-gray-500 dark:text-gray-400 text-sm">No posts found matching your current filter.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            filteredPosts.forEach(post => {
+                const postCard = document.createElement('article');
+                postCard.className = "bg-white border border-gray-200 rounded-xl shadow-sm dark:bg-gray-800 dark:border-gray-700 p-4 transition-all";
+                
+                postCard.innerHTML = `
+                    <!-- Post Header -->
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center space-x-3">
+                            <img class="w-10 h-10 rounded-full object-cover" src="${post.avatar}" alt="${post.author}" onerror="this.src='https://placehold.co/100x100/3b82f6/white?text=U'">
+                            <div>
+                                <div class="flex items-center space-x-2">
+                                    <h4 class="text-sm font-bold text-gray-900 dark:text-white">${post.author}</h4>
+                                    ${post.category === 'Announcements' ? '<span class="bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300 text-[10px] font-bold px-2 py-0.5 rounded">Announcement</span>' : ''}
+                                </div>
+                                <p class="text-[11px] text-gray-500 dark:text-gray-400">${post.role} • ${post.timestamp}</p>
+                            </div>
+                        </div>
+
+                        <!-- Dropdown Options -->
+                        <div class="relative inline-block text-left">
+                            <button onclick="toggleOptionsDropdown(${post.id})" class="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"></path></svg>
+                            </button>
+                            <div id="options-dropdown-${post.id}" class="hidden absolute right-0 mt-2 w-36 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg z-20 overflow-hidden">
+                                <button onclick="bookmarkPost(${post.id})" class="w-full text-left px-4 py-2 text-xs text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 flex items-center">Bookmark</button>
+                                ${post.isMine ? `<button onclick="deletePost(${post.id})" class="w-full text-left px-4 py-2 text-xs text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-600 flex items-center">Delete Post</button>` : `<button onclick="showToast('Post reported to moderators')" class="w-full text-left px-4 py-2 text-xs text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 flex items-center">Report</button>`}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Post Content Body -->
+                    <p class="text-sm text-gray-800 dark:text-gray-200 mb-3 whitespace-pre-line leading-relaxed">${formatPostText(post.content)}</p>
+
+                    <!-- Optional Attached Image -->
+                    ${post.image ? `
+                        <div class="mb-3 rounded-lg overflow-hidden border border-gray-100 dark:border-gray-700">
+                            <img src="${post.image}" class="w-full max-h-96 object-cover hover:scale-[1.01] transition-transform duration-200" alt="Post graphic" onerror="this.style.display='none'">
+                        </div>
+                    ` : ''}
+
+                    <!-- Post Reaction Action Toolbar -->
+                    <div class="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-700 text-xs">
+                        <div class="flex items-center space-x-4">
+                            <!-- Like Button -->
+                            <button onclick="toggleLike(${post.id})" class="flex items-center space-x-1.5 ${post.isLiked ? 'text-red-500 font-bold' : 'text-gray-500 hover:text-red-500'} dark:text-gray-400 transition-colors">
+                                <svg class="w-4 h-4 ${post.isLiked ? 'fill-current' : 'none'}" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+                                <span>${post.likes} Likes</span>
+                            </button>
+
+                            <!-- Comment Count Button -->
+                            <button onclick="toggleComments(${post.id})" class="flex items-center space-x-1.5 text-gray-500 hover:text-primary-600 dark:text-gray-400 transition-colors">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+                                <span>${post.comments.length} Comments</span>
+                            </button>
+                        </div>
+
+                        <!-- Share Button -->
+                        <button onclick="sharePost(${post.id})" class="flex items-center space-x-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 transition-colors">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 100-2.684 3 3 0 000 2.684zm0 9a3 3 0 100-2.684 3 3 0 000 2.684z"></path></svg>
+                            <span class="hidden sm:inline">Share</span>
+                        </button>
+                    </div>
+
+                    <!-- Expandable Comment Section -->
+                    <div id="comments-section-${post.id}" class="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700 space-y-3">
+                        <!-- List of existing comments -->
+                        <div class="space-y-2">
+                            ${post.comments.map(comment => `
+                                <div class="flex items-start space-x-2 bg-gray-50 dark:bg-gray-700/40 p-2.5 rounded-lg text-xs">
+                                    <img class="w-7 h-7 rounded-full object-cover" src="${comment.avatar}" alt="${comment.author}">
+                                    <div class="flex-1">
+                                        <div class="flex items-center justify-between">
+                                            <span class="font-bold text-gray-900 dark:text-white">${comment.author}</span>
+                                            <span class="text-[10px] text-gray-400">${comment.time}</span>
+                                        </div>
+                                        <p class="text-gray-700 dark:text-gray-300 mt-0.5">${comment.text}</p>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+
+                        <!-- Add Comment Input Box -->
+                        <div class="flex items-center space-x-2 pt-1">
+                            <img class="w-7 h-7 rounded-full" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150" alt="Your Avatar">
+                            <input type="text" id="comment-input-${post.id}" onkeypress="handleCommentKeyPress(event, ${post.id})" class="flex-1 text-xs bg-gray-50 border border-gray-200 text-gray-900 rounded-lg p-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-primary-500" placeholder="Write a comment...">
+                            <button onclick="addComment(${post.id})" class="px-3 py-1.5 text-xs font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors">Send</button>
+                        </div>
+                    </div>
+                `;
+
+                feedContainer.appendChild(postCard);
+            });
+        }
+
+        // Highlight Hashtags in text body
+        function formatPostText(text) {
+            return text.replace(/#(\w+)/g, '<span class="text-primary-600 dark:text-primary-400 font-semibold cursor-pointer hover:underline" onclick="filterByHashtag(\'$1\')">#$1</span>');
+        }
+
+        // Post Creation Handlers
+        function publishPost() {
+            const contentInput = document.getElementById('post-input');
+            const visibilitySelect = document.getElementById('post-visibility');
+            const content = contentInput.value.trim();
+
+            if (!content && !attachedImageUrl) {
+                showToast("Please write something or attach an image before posting!");
+                return;
+            }
+
+            const newPost = {
+                id: Date.now(),
+                author: "Alex Rivera",
+                role: "System Admin (You)",
+                avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150",
+                timestamp: "Just now",
+                content: content,
+                image: attachedImageUrl,
+                likes: 0,
+                isLiked: false,
+                isMine: true,
+                category: visibilitySelect.value,
+                comments: []
+            };
+
+            postsData.unshift(newPost);
+            
+            // Reset input form
+            contentInput.value = '';
+            removeAttachedImage();
+            
+            renderFeed();
+            updateCounts();
+            showToast("Your post has been published successfully!");
+        }
+
+        // Image Attachment Handler
+        function toggleImageUrlBox() {
+            const box = document.getElementById('image-url-input-box');
+            box.classList.toggle('hidden');
+        }
+
+        function attachImageFromUrl() {
+            const input = document.getElementById('image-url-input');
+            const url = input.value.trim();
+            if (url) {
+                attachedImageUrl = url;
+                document.getElementById('image-preview').src = url;
+                document.getElementById('image-preview-container').classList.remove('hidden');
+                document.getElementById('image-url-input-box').classList.add('hidden');
+                input.value = '';
+            }
+        }
+
+        function removeAttachedImage() {
+            attachedImageUrl = null;
+            document.getElementById('image-preview-container').classList.add('hidden');
+            document.getElementById('image-preview').src = '';
+        }
+
+        function insertTag(tagText) {
+            const textarea = document.getElementById('post-input');
+            textarea.value += ` ${tagText} `;
+            textarea.focus();
+        }
+
+        function insertEmoji(emoji) {
+            const textarea = document.getElementById('post-input');
+            textarea.value += ` ${emoji} `;
+            textarea.focus();
+        }
+
+        // Like / Reaction Handler
+        function toggleLike(postId) {
+            const post = postsData.find(p => p.id === postId);
+            if (post) {
+                post.isLiked = !post.isLiked;
+                post.likes += post.isLiked ? 1 : -1;
+                renderFeed();
+            }
+        }
+
+        // Comments Handler
+        function toggleComments(postId) {
+            const section = document.getElementById(`comments-section-${postId}`);
+            if (section) section.classList.toggle('hidden');
+        }
+
+        function addComment(postId) {
+            const input = document.getElementById(`comment-input-${postId}`);
+            const text = input.value.trim();
+            if (!text) return;
+
+            const post = postsData.find(p => p.id === postId);
+            if (post) {
+                post.comments.push({
+                    id: Date.now(),
+                    author: "Alex Rivera",
+                    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150",
+                    time: "Just now",
+                    text: text
+                });
+                renderFeed();
+            }
+        }
+
+        function handleCommentKeyPress(event, postId) {
+            if (event.key === 'Enter') {
+                addComment(postId);
+            }
+        }
+
+        // Filter & Search Functions
+        function setFilter(filterType) {
+            currentFilter = filterType;
+            
+            // Highlight selected tab
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.className = "filter-btn w-full flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors";
+            });
+
+            const activeBtn = document.getElementById(`filter-${filterType}`);
+            if (activeBtn) {
+                activeBtn.className = "filter-btn w-full flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-primary-600 bg-primary-50 dark:bg-primary-900/30 dark:text-primary-400";
+            }
+
+            renderFeed();
+        }
+
+        function handleSearch(query) {
+            searchQuery = query;
+            renderFeed();
+        }
+
+        function filterByHashtag(tag) {
+            document.getElementById('feed-search').value = `#${tag}`;
+            handleSearch(`#${tag}`);
+        }
+
+        function updateCounts() {
+            document.getElementById('count-all').innerText = postsData.length;
+            document.getElementById('count-mine').innerText = postsData.filter(p => p.isMine).length;
+        }
+
+        // Post Options & Helper Functions
+        function toggleOptionsDropdown(postId) {
+            const dropdown = document.getElementById(`options-dropdown-${postId}`);
+            dropdown.classList.toggle('hidden');
+        }
+
+        function deletePost(postId) {
+            postsData = postsData.filter(p => p.id !== postId);
+            renderFeed();
+            updateCounts();
+            showToast("Post deleted.");
+        }
+
+        function bookmarkPost(postId) {
+            toggleOptionsDropdown(postId);
+            showToast("Post saved to your bookmarks!");
+        }
+
+        function sharePost(postId) {
+            showToast("Post link copied to clipboard!");
+        }
+
+        function toggleFollow(btn) {
+            if (btn.innerText === 'Follow') {
+                btn.innerText = 'Following';
+                btn.className = "px-2.5 py-1 text-[11px] font-medium text-white bg-primary-600 rounded-md transition-colors";
+                showToast("Started following user.");
+            } else {
+                btn.innerText = 'Follow';
+                btn.className = "px-2.5 py-1 text-[11px] font-medium text-primary-600 border border-primary-600 dark:text-primary-400 dark:border-primary-400 rounded-md hover:bg-primary-50 dark:hover:bg-primary-900/40 transition-colors";
+            }
+        }
+
+        // Notification Toast Display
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-message').innerText = message;
+            toast.classList.remove('hidden');
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
